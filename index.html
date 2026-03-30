@@ -1,439 +1,689 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI로 일상이 바뀌는 순간: 고양시민 7대 실습 가이드</title>
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <!-- Chosen Palette: Warm Neutrals with Indigo Accents -->
-    <!-- Application Structure Plan: 
-        1. **Hero/Intro**: Sets the context based on the "Vibe Coding" and AI practical use theme.
-        2. **Dashboard/Quantitative View**: A Chart.js bar chart translating the qualitative "time saved" statements from the report into a visual "Time Savings %" metric. This provides immediate proof of ROI.
-        3. **Interactive "Comic" Storyboard**: The core feature. A 2-column layout (or stacked on mobile) where users select a scenario from a list on the left, and the right panel dynamically updates to show the "Comic-style" problem and solution dialogue. This prevents overwhelming the user with text and encourages active exploration.
-    -->
-    <!-- Visualization & Content Choices: 
-        - **Goal: Inform & Compare** -> Show the impact of each AI tool.
-        - **Viz/Method**: Horizontal Bar Chart (Chart.js/Canvas).
-        - **Interaction**: Hover tooltips showing exact details.
-        - **Justification**: The report highlights time saved (e.g., 30 mins to 10 secs). A bar chart visually proves the massive efficiency gain of these tools. NO SVG used.
-        - **Goal: Educate/Explore** -> Present the 7 practical exercises.
-        - **Viz/Method**: Dynamic Text/Dialogue Panels (Vanilla JS + HTML/Tailwind).
-        - **Interaction**: Clickable scenario list updating a main display area.
-        - **Justification**: The source material is formatted as a comic dialogue. An interactive master-detail view mimics flipping through comic pages, keeping the UI clean while allowing deep dives into the prompts and results. NO Mermaid used.
-    -->
-    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
-
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
-        
-        body {
-            font-family: 'Noto Sans KR', sans-serif;
-            background-color: #F9FAFB; /* Gray-50 */
-            color: #1F2937; /* Gray-800 */
-        }
-
-        /* Mandatory Chart Container Styling */
-        .chart-container {
-            position: relative;
-            width: 100%;
-            max-width: 800px;
-            margin-left: auto;
-            margin-right: auto;
-            height: 40vh;
-            max-height: 400px;
-        }
-        @media (max-width: 768px) {
-            .chart-container {
-                height: 300px;
-            }
-        }
-
-        /* Custom Scrollbar for scenario list */
-        .scenario-list::-webkit-scrollbar {
-            width: 6px;
-        }
-        .scenario-list::-webkit-scrollbar-track {
-            background: #f1f1f1; 
-            border-radius: 4px;
-        }
-        .scenario-list::-webkit-scrollbar-thumb {
-            background: #c7d2fe; 
-            border-radius: 4px;
-        }
-        .scenario-list::-webkit-scrollbar-thumb:hover {
-            background: #818cf8; 
-        }
-
-        /* Comic Bubble Styles */
-        .bubble-left {
-            position: relative;
-            background: #ffffff;
-            border: 2px solid #e5e7eb;
-            border-radius: 1rem;
-            border-top-left-radius: 0;
-            padding: 1rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-        .bubble-right {
-            position: relative;
-            background: #eef2ff;
-            border: 2px solid #c7d2fe;
-            border-radius: 1rem;
-            border-top-right-radius: 0;
-            padding: 1rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HTML → Markdown 변환기</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f8f9fa; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f3f5; }
+    ::-webkit-scrollbar-thumb { background: #ced4da; border-radius: 3px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
 </head>
-<body class="antialiased selection:bg-indigo-200 selection:text-indigo-900">
+<body>
+  <div id="root"></div>
 
-    <div class="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        
-        <!-- Header Section -->
-        <header class="text-center mb-12">
-            <h1 class="text-3xl md:text-5xl font-bold text-indigo-900 mb-4 tracking-tight">AI로 일상이 바뀌는 순간</h1>
-            <p class="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">고양시민을 위한 7대 바이브 코딩 실습 가이드. 복잡한 코딩 없이 말 한마디로 업무와 일상을 혁신하는 방법을 알아봅니다.</p>
-        </header>
+  <script type="text/babel">
+    const { useState, useRef, useCallback } = React;
 
-        <!-- Section 1: Data Overview -->
-        <section class="mb-16 bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
-            <div class="mb-6">
-                <h2 class="text-2xl font-bold text-gray-800 border-b-2 border-indigo-100 pb-2 inline-block mb-4">💡 AI 도입의 압도적 효율성</h2>
-                <p class="text-gray-600">
-                    이 섹션에서는 7가지 AI 도구를 실무에 도입했을 때 얻을 수 있는 <strong>추정 시간 단축 효과</strong>를 보여줍니다. 
-                    기존 방식(수작업) 대비 AI를 활용했을 때 얼마나 극적으로 업무 시간이 줄어드는지 차트를 통해 직관적으로 확인할 수 있습니다. 
-                    단순한 텍스트를 넘어, AI 기술 진화(바이브 코딩)가 가져오는 실제적 가치를 한눈에 파악해 보세요.
-                </p>
-            </div>
-            
-            <div class="chart-container">
-                <canvas id="efficiencyChart"></canvas>
-            </div>
-        </section>
+    // ============================================================
+    // 유틸리티
+    // ============================================================
+    const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-        <!-- Section 2: Interactive Comic Scenarios -->
-        <section class="mb-12">
-            <div class="mb-6">
-                <h2 class="text-2xl font-bold text-gray-800 border-b-2 border-indigo-100 pb-2 inline-block mb-4">📖 실전! 인터랙티브 실습 만화</h2>
-                <p class="text-gray-600">
-                    이 섹션은 여러분이 직접 겪을 법한 7가지 일상/업무 문제를 AI로 해결하는 과정을 <strong>만화 형식의 대화</strong>로 구성했습니다. 
-                    좌측의 과제 목록을 클릭하여 상황을 선택하면, 우측 화면에서 시민의 고민과 AI 가이드의 명쾌한 해결책, 그리고 
-                    실제 입력해야 할 <strong>프롬프트와 결과</strong>를 생생하게 확인할 수 있습니다. 직접 클릭하며 탐색해 보세요!
-                </p>
-            </div>
+    function formatFileSize(bytes) {
+      if (bytes < 1024) return `${bytes} B`;
+      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    }
 
-            <div class="flex flex-col lg:flex-row gap-6 h-auto lg:h-[600px]">
-                
-                <!-- Left: Navigation / Scenario List -->
-                <div class="w-full lg:w-1/3 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-                    <div class="p-4 bg-indigo-50 border-b border-indigo-100 font-bold text-indigo-800 text-lg">
-                        실습 과제 선택 🗂️
-                    </div>
-                    <ul id="scenario-list" class="scenario-list flex-1 overflow-y-auto p-2 space-y-2">
-                        <!-- JS will populate list here -->
-                    </ul>
-                </div>
+    function readFileAsText(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = reject;
+        reader.readAsText(file, "UTF-8");
+      });
+    }
 
-                <!-- Right: Content Display Area -->
-                <div class="w-full lg:w-2/3 bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col relative overflow-y-auto">
-                    <div id="content-display" class="w-full h-full flex flex-col">
-                        <!-- Default/Empty State -->
-                        <div class="flex-1 flex flex-col items-center justify-center text-center text-gray-400">
-                            <div class="text-6xl mb-4">👈</div>
-                            <h3 class="text-xl font-medium text-gray-500">좌측에서 실습 과제를 선택해주세요.</h3>
-                            <p class="mt-2 text-sm">AI 가이드가 해결책을 알려드립니다.</p>
-                        </div>
-                    </div>
-                </div>
+    // ============================================================
+    // DOM → Markdown 변환 함수
+    // ============================================================
+    function processInline(node) {
+      return Array.from(node.childNodes)
+        .map((child) => {
+          if (child.nodeType === 3) return child.textContent.replace(/[ \t]+/g, " ");
+          if (child.nodeType !== 1) return "";
+          const tag = child.tagName.toLowerCase();
+          switch (tag) {
+            case "strong": case "b": return `**${processInline(child)}**`;
+            case "em":     case "i": return `*${processInline(child)}*`;
+            case "code":  return `\`${child.textContent}\``;
+            case "a":     return processInline(child);
+            case "img":   return child.getAttribute("alt") || "";
+            case "br":    return "  \n";
+            default:      return processInline(child);
+          }
+        })
+        .join("");
+    }
 
-            </div>
-        </section>
+    function processListItems(listNode, type, depth = 0) {
+      const indent = "  ".repeat(depth);
+      const lines = [];
+      let orderedIndex = 1;
+      Array.from(listNode.childNodes).forEach((li) => {
+        if (li.nodeType !== 1 || li.tagName.toLowerCase() !== "li") return;
+        let lineText = "";
+        const nestedLists = [];
+        Array.from(li.childNodes).forEach((child) => {
+          if (child.nodeType === 3) {
+            lineText += child.textContent.replace(/[ \t]+/g, " ");
+          } else if (child.nodeType === 1) {
+            const ctag = child.tagName.toLowerCase();
+            if (ctag === "ul") nestedLists.push({ type: "ul", node: child });
+            else if (ctag === "ol") nestedLists.push({ type: "ol", node: child });
+            else lineText += processInline(child);
+          }
+        });
+        const marker = type === "ul" ? "-" : `${orderedIndex}.`;
+        if (type === "ol") orderedIndex++;
+        lines.push(`${indent}${marker} ${lineText.trim()}`);
+        nestedLists.forEach(({ type: ntype, node }) => {
+          lines.push(processListItems(node, ntype, depth + 1));
+        });
+      });
+      return lines.join("\n");
+    }
 
-    </div>
+    function convertTable(tableNode) {
+      const allRows = Array.from(tableNode.querySelectorAll("tr"));
+      if (allRows.length === 0) return "";
+      const tableData = allRows.map((row) =>
+        Array.from(row.querySelectorAll("th, td")).map((cell) =>
+          cell.textContent.replace(/\|/g, "\\|").replace(/\s+/g, " ").trim()
+        )
+      );
+      const maxCols = Math.max(...tableData.map((r) => r.length));
+      const pad = (row) => { while (row.length < maxCols) row.push(""); return row; };
+      const headers = pad(tableData[0]);
+      const separator = headers.map(() => "---");
+      const body = tableData.slice(1).map(pad);
+      let result = `| ${headers.join(" | ")} |\n| ${separator.join(" | ")} |\n`;
+      body.forEach((row) => { result += `| ${row.join(" | ")} |\n`; });
+      return result;
+    }
 
-    <!-- Data & Application Logic -->
-    <script>
-        // --- 1. Data Storage (Extracted from the Markdown Report) ---
-        const reportData = [
-            {
-                id: 1,
-                title: "모임 공지, 1초 만에 끝내기",
-                tool: "챗GPT Projects",
-                timeSavedPercent: 99, // 30min -> 10sec ~99%
-                sceneBefore: "아휴... 이번 달 정기 모임 공지문 또 써야 하네. 매달 비슷한 내용인데 매번 새로 쓰는 기분이야.",
-                guideResponse: "잠깐만요! 챗GPT '프로젝트' 기능을 써보셨나요? 과거 공지문 파일만 넣어두면 끝이에요!",
-                actionExecution: "챗GPT 프로젝트에 '모임 규칙' 파일을 업로드하고 명령하기.",
-                prompt: "지난달 공지문 참고해서 4월 1일 고양시 모임 공지 올려줘.",
-                result: "일시, 장소, 준비물까지 완벽 정리!",
-                wowPoint: "매번 고민하던 공지문 작성 시간이 30분에서 10초로 줄어들었어요!",
-                icon: "📝"
-            },
-            {
-                id: 2,
-                title: "나만의 경제 비서 만들기",
-                tool: "My GPTs",
-                timeSavedPercent: 85, // 30min reading -> 5min ~83%
-                sceneBefore: "세상은 빨리 변하는데 경제 뉴스는 너무 많고 어려워... 누가 핵심만 딱 요약해줬으면!",
-                guideResponse: "당신만을 위한 '맞춤형 GPT'를 만드세요. 뉴스 링크만 던져주면 요약봇이 됩니다.",
-                actionExecution: "GPTs 탐색기에서 'News Summarizer' 설정 또는 생성.",
-                prompt: "오늘의 주요 경제 뉴스 3가지만 고양시민 눈높이에서 쉽게 요약해줘.",
-                result: "아침 커피 마시는 5분 동안 세상 흐름 완벽 파악!",
-                wowPoint: "나만의 똑똑한 비서가 생긴 기분이에요!",
-                icon: "📰"
-            },
-            {
-                id: 3,
-                title: "말 한마디로 만드는 웹사이트",
-                tool: "GenSpark",
-                timeSavedPercent: 99, // days -> 1 min
-                sceneBefore: "우리 꽃꽂이 동아리 홍보 페이지 하나 만들고 싶은데... 개발자도 아니고 돈도 없어서 포기해야겠죠?",
-                guideResponse: "바이브 코딩의 시대잖아요! 젠스파크에 '뭐 만들지' 말만 하세요.",
-                actionExecution: "GenSpark AI Dev 접속 후 주제 입력.",
-                prompt: "고양시 꽃사랑 동아리 신청 페이지 만들어줘. 예쁜 꽃 사진도 넣어줘!",
-                result: "코딩 한 줄 몰라도 1분 만에 근사한 웹사이트가 짠!",
-                wowPoint: "이게 입코딩의 위력이군요. 기획만 하면 AI가 다 만들어주네요.",
-                icon: "🌐"
-            },
-            {
-                id: 4,
-                title: "B2B 제품 홍보도 뚝딱",
-                tool: "구글 AI Studio",
-                timeSavedPercent: 98, // week -> minutes
-                sceneBefore: "거래처에 보여줄 우리 제품 상세 페이지가 필요한데, 전문업체는 너무 비싸요.",
-                guideResponse: "구글 AI 스튜디오의 'Build' 모드를 믿어보세요. 프로급 결과물이 나옵니다.",
-                actionExecution: "Google AI Studio에서 Prompt 기반 웹앱 생성.",
-                prompt: "신뢰감 주는 파란색 톤으로 우리 회사 제품 카탈로그 페이지를 코딩해줘.",
-                result: "비용 제로! 전문성 100%! 업체에 맡긴 것 같아요.",
-                wowPoint: "우리 회사의 디지털 전환, AI로 완벽히 해결했습니다.",
-                icon: "💼"
-            },
-            {
-                id: 5,
-                title: "심층 보고서가 술술",
-                tool: "구글 Opal",
-                timeSavedPercent: 90, // hours -> 10 mins
-                sceneBefore: "주말농장 정보에 대해 깊이 있는 블로그 글을 쓰고 싶은데 자료 조사가 너무 막막해요.",
-                guideResponse: "구글 오팔(Opal)은 전 세계 자료를 뒤져서 가장 정확한 정보를 정리해줍니다.",
-                actionExecution: "Opal에 주제 던지기.",
-                prompt: "고양시 인근 주말농장 명소 5곳과 재배 팁을 심층 조사해서 블로그 형식으로 써줘.",
-                result: "조사부터 작성까지! 전문가가 쓴 것 같은 고퀄리티 콘텐츠 완성.",
-                wowPoint: "자료 검색의 고통에서 완전히 해방되었습니다!",
-                icon: "📊"
-            },
-            {
-                id: 6,
-                title: "나만의 뮤직비디오 생성",
-                tool: "구글 Colab",
-                timeSavedPercent: 80, // hours editing -> quick gen
-                sceneBefore: "여행 사진에 음악을 입혀서 멋진 영상을 만들고 싶은데... 영상 편집 너무 어려워요.",
-                guideResponse: "파이썬 코드를 몰라도 돼요! 코랩(Colab)에서 버튼만 누르면 AI가 영상을 구워줍니다.",
-                actionExecution: "제공된 코랩 링크 접속 -> 실행 버튼 클릭 -> 이미지/음악 업로드.",
-                result: "음악 리듬에 맞춰 변하는 환상적인 뮤직비디오!",
-                prompt: "(버튼 클릭 및 파일 업로드로 대체)",
-                wowPoint: "내가 만든 영상이 유튜브 쇼츠 감성이네? 너무 신기해요!",
-                icon: "🎬"
-            },
-            {
-                id: 7,
-                title: "PPT 기획부터 디자인까지",
-                tool: "Claude Skills",
-                timeSavedPercent: 90, // hours -> 10 mins
-                sceneBefore: "내일 발표인데 슬라이드 구성을 어떻게 짜야 할지 감도 안 와요. 도와줘요!",
-                guideResponse: "클로드의 '스킬' 기능을 쓰면 전문가의 강의안 제작 비법을 그대로 빌려올 수 있어요.",
-                actionExecution: "클로드에 '강의안 생성 스킬' 적용 후 주제 입력.",
-                prompt: "고양시 재활용 캠페인 발표용 슬라이드 10장 구성안 짜줘.",
-                result: "기획부터 발표 대본까지! 이제 발표가 기다려져요!",
-                wowPoint: "기획의 틀을 AI가 잡아주니 살붙이는 건 일도 아니네요.",
-                icon: "📊"
-            }
-        ];
+    const SKIP_TAGS = new Set([
+      "script", "style", "head", "meta", "link", "noscript",
+      "iframe", "svg", "input", "select", "textarea", "canvas",
+      "button", "form",
+    ]);
 
-        // --- 2. Chart.js Initialization ---
-        function initChart() {
-            const ctx = document.getElementById('efficiencyChart').getContext('2d');
-            
-            // Prepare data from array
-            const labels = reportData.map(item => item.tool);
-            const dataValues = reportData.map(item => item.timeSavedPercent);
-
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: '예상 시간 단축율 (%)',
-                        data: dataValues,
-                        backgroundColor: 'rgba(99, 102, 241, 0.6)', // Tailwind Indigo-500
-                        borderColor: 'rgba(79, 70, 229, 1)',   // Tailwind Indigo-600
-                        borderWidth: 1,
-                        borderRadius: 4,
-                        hoverBackgroundColor: 'rgba(79, 70, 229, 0.8)'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    indexAxis: 'y', // Horizontal bar chart for better readability of tool names
-                    scales: {
-                        x: {
-                            beginAtZero: true,
-                            max: 100,
-                            title: {
-                                display: true,
-                                text: '시간 단축율 (%)',
-                                font: { family: "'Noto Sans KR', sans-serif" }
-                            }
-                        },
-                        y: {
-                            ticks: {
-                                font: { family: "'Noto Sans KR', sans-serif" }
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            titleFont: { family: "'Noto Sans KR', sans-serif" },
-                            bodyFont: { family: "'Noto Sans KR', sans-serif" },
-                            callbacks: {
-                                label: function(context) {
-                                    return `단축율: ${context.parsed.x}%`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
+    function processBlock(node) {
+      if (node.nodeType === 3) {
+        const t = node.textContent.replace(/[ \t]+/g, " ").trim();
+        return t ? t + " " : "";
+      }
+      if (node.nodeType !== 1) return "";
+      const tag = node.tagName.toLowerCase();
+      if (SKIP_TAGS.has(tag)) return "";
+      switch (tag) {
+        case "h1": return `# ${processInline(node).trim()}\n\n`;
+        case "h2": return `## ${processInline(node).trim()}\n\n`;
+        case "h3": return `### ${processInline(node).trim()}\n\n`;
+        case "h4": return `#### ${processInline(node).trim()}\n\n`;
+        case "h5": return `##### ${processInline(node).trim()}\n\n`;
+        case "h6": return `###### ${processInline(node).trim()}\n\n`;
+        case "p": {
+          const c = processInline(node).trim();
+          return c ? `${c}\n\n` : "";
         }
-
-        // --- 3. UI Interaction Logic ---
-        
-        const listContainer = document.getElementById('scenario-list');
-        const displayContainer = document.getElementById('content-display');
-        let selectedId = null;
-
-        // Render the list of scenarios
-        function renderList() {
-            listContainer.innerHTML = '';
-            reportData.forEach(item => {
-                const li = document.createElement('li');
-                const isSelected = selectedId === item.id;
-                
-                li.className = `p-3 rounded-xl cursor-pointer transition-all duration-200 border ${isSelected ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'bg-white text-gray-700 border-gray-200 hover:bg-indigo-50 hover:border-indigo-300'}`;
-                
-                li.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <span class="text-2xl">${item.icon}</span>
-                        <div>
-                            <div class="font-bold text-sm">실습 ${item.id}: ${item.tool}</div>
-                            <div class="text-xs truncate opacity-90">${item.title}</div>
-                        </div>
-                    </div>
-                `;
-                
-                li.addEventListener('click', () => {
-                    selectedId = item.id;
-                    renderList(); // re-render to update selected state styling
-                    renderDisplay(item);
-                });
-                
-                listContainer.appendChild(li);
-            });
+        case "br": return "\n";
+        case "hr": return "---\n\n";
+        case "ul": return processListItems(node, "ul") + "\n\n";
+        case "ol": return processListItems(node, "ol") + "\n\n";
+        case "pre": {
+          const codeEl = node.querySelector("code");
+          const content = codeEl ? codeEl.textContent : node.textContent;
+          const lang = (codeEl?.className || "").match(/language-(\w+)/)?.[1] || "";
+          return `\`\`\`${lang}\n${content.replace(/\n$/, "")}\n\`\`\`\n\n`;
         }
-
-        // Render the selected scenario details (The Comic Panel)
-        function renderDisplay(item) {
-            displayContainer.innerHTML = `
-                <div class="animate-fade-in flex flex-col h-full space-y-6 pb-4">
-                    
-                    <!-- Header -->
-                    <div class="border-b border-gray-100 pb-4">
-                        <span class="inline-block px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs font-bold mb-2 tracking-wide">${item.tool}</span>
-                        <h3 class="text-2xl font-bold text-gray-800">${item.title}</h3>
-                    </div>
-
-                    <!-- Comic Scene: Before -->
-                    <div class="flex flex-col space-y-2">
-                        <span class="text-sm font-bold text-gray-500 uppercase tracking-wider">장면 1: 시민의 고민</span>
-                        <div class="flex items-start gap-4">
-                            <div class="text-4xl mt-2">🧑‍🦱</div>
-                            <div class="bubble-left text-gray-700 leading-relaxed flex-1">
-                                "${item.sceneBefore}"
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Comic Scene: Guide Response -->
-                    <div class="flex flex-col space-y-2 mt-4">
-                        <span class="text-sm font-bold text-gray-500 uppercase tracking-wider text-right">장면 2: AI 가이드의 등장</span>
-                        <div class="flex items-start gap-4 flex-row-reverse">
-                            <div class="text-4xl mt-2">🤖</div>
-                            <div class="bubble-right text-indigo-900 leading-relaxed flex-1">
-                                "${item.guideResponse}"
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Action & Result Box -->
-                    <div class="mt-8 bg-gray-50 rounded-xl p-5 border border-gray-200">
-                        <h4 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
-                            <span>🚀</span> 실습 및 결과
-                        </h4>
-                        
-                        <div class="space-y-4 text-sm">
-                            <div>
-                                <strong class="text-indigo-600 block mb-1">▶ 실행 방법</strong>
-                                <p class="text-gray-700 bg-white p-2 rounded border border-gray-100">${item.actionExecution}</p>
-                            </div>
-                            
-                            <div>
-                                <strong class="text-indigo-600 block mb-1">▶ 핵심 프롬프트 (명령어)</strong>
-                                <p class="text-gray-800 font-mono bg-gray-200 p-2 rounded border border-gray-300 select-all">"${item.prompt}"</p>
-                            </div>
-                            
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                                <div class="bg-green-50 p-3 rounded-lg border border-green-100">
-                                    <strong class="text-green-700 block mb-1 text-xs uppercase">결과물</strong>
-                                    <p class="text-green-900 font-medium">${item.result}</p>
-                                </div>
-                                <div class="bg-yellow-50 p-3 rounded-lg border border-yellow-100">
-                                    <strong class="text-yellow-700 block mb-1 text-xs uppercase">✨ 와우 포인트</strong>
-                                    <p class="text-yellow-900 font-medium">"${item.wowPoint}"</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
+        case "code": return `\`${node.textContent}\``;
+        case "blockquote": {
+          const inner = processChildren(node).trim();
+          return inner.split("\n").map((l) => `> ${l}`).join("\n") + "\n\n";
         }
+        case "table": return convertTable(node) + "\n";
+        case "strong": case "b": return `**${processInline(node)}**`;
+        case "em":     case "i": return `*${processInline(node)}*`;
+        case "a":  return processInline(node);
+        case "img": return node.getAttribute("alt") || "";
+        default:   return processChildren(node);
+      }
+    }
 
-        // Add a simple fade-in animation to Tailwind via injected styles for the content swap
-        const style = document.createElement('style');
-        style.textContent = `
-            .animate-fade-in {
-                animation: fadeIn 0.3s ease-in-out;
-            }
-            @keyframes fadeIn {
-                from { opacity: 0; transform: translateY(10px); }
-                to { opacity: 1; transform: translateY(0); }
-            }
-        `;
-        document.head.appendChild(style);
+    function processChildren(node) {
+      return Array.from(node.childNodes)
+        .map((child) => processBlock(child))
+        .join("");
+    }
 
-        // --- 4. Initialization ---
-        window.addEventListener('DOMContentLoaded', () => {
-            initChart();
-            renderList();
+    // ============================================================
+    // iframe 렌더링 (JS 실행 포함)
+    // ============================================================
+    function renderInIframe(html) {
+      return new Promise((resolve) => {
+        const iframe = document.createElement("iframe");
+        iframe.setAttribute("sandbox", "allow-scripts allow-same-origin");
+        iframe.style.cssText =
+          "position:fixed;top:-9999px;left:-9999px;width:1400px;height:900px;" +
+          "border:none;visibility:hidden;pointer-events:none;z-index:-1;";
+        let done = false;
+        const finish = () => {
+          if (done) return;
+          done = true;
+          setTimeout(() => resolve(iframe), 900);
+        };
+        iframe.onload = finish;
+        setTimeout(finish, 6000);
+        document.body.appendChild(iframe);
+        iframe.srcdoc = html;
+      });
+    }
+
+    // ============================================================
+    // 동적 네비게이션 패턴 탐지
+    // ============================================================
+    async function findDynamicPattern(doc) {
+      const containers = Array.from(
+        doc.querySelectorAll("ul, ol, nav, [role='tablist']")
+      ).filter((el) => {
+        const items = el.querySelectorAll(
+          ":scope > li, :scope > button, :scope > [role='tab']"
+        );
+        return items.length >= 2;
+      });
+
+      if (containers.length === 0) return { navContainer: null, contentArea: null };
+
+      const candidates = Array.from(doc.querySelectorAll("[id]")).filter(
+        (el) => !["html", "head", "body"].includes(el.tagName.toLowerCase())
+      );
+
+      for (const container of containers) {
+        const items = Array.from(
+          container.querySelectorAll(":scope > li, :scope > button, :scope > [role='tab']")
+        );
+        if (items.length < 2) continue;
+
+        const before = {};
+        candidates.forEach((el) => { before[el.id] = el.innerHTML; });
+
+        items[0].click();
+        await delay(350);
+
+        let bestEl = null;
+        let bestChange = 0;
+        candidates.forEach((el) => {
+          if (!el.id || before[el.id] === el.innerHTML) return;
+          const change = Math.abs(el.innerHTML.length - (before[el.id] || "").length);
+          const notRelated = !el.contains(container) && !container.contains(el) && el !== container;
+          if (change > bestChange && notRelated) {
+            bestChange = change;
+            bestEl = el;
+          }
         });
 
-    </script>
+        if (bestEl && bestChange > 30) {
+          return { navContainer: container, contentArea: bestEl };
+        }
+      }
+
+      return { navContainer: null, contentArea: null };
+    }
+
+    // ============================================================
+    // 메인 변환 함수 (비동기)
+    // ============================================================
+    async function convertHtmlToMarkdown(html, onProgress) {
+      onProgress({ status: "HTML 렌더링 중 (JS 실행 포함)...", current: 0, total: 0 });
+
+      const iframe = await renderInIframe(html);
+
+      try {
+        const doc = iframe.contentDocument || iframe.contentWindow?.document;
+
+        if (!doc || !doc.body) {
+          onProgress({ status: "정적 변환 중 (폴백)...", current: 0, total: 0 });
+          const parser = new DOMParser();
+          const staticDoc = parser.parseFromString(html, "text/html");
+          return processChildren(staticDoc.body).replace(/\n{3,}/g, "\n\n").trim();
+        }
+
+        const title = doc.title || "";
+        let output = title ? `# ${title}\n\n` : "";
+
+        onProgress({ status: "동적 콘텐츠 구조 분석 중...", current: 0, total: 0 });
+        const { navContainer, contentArea } = await findDynamicPattern(doc);
+
+        if (navContainer && contentArea) {
+          onProgress({ status: "정적 본문 추출 중...", current: 0, total: 0 });
+          const bodyClone = doc.body.cloneNode(true);
+
+          [
+            { id: navContainer.id },
+            { id: contentArea.id },
+          ].forEach(({ id }) => {
+            if (!id) return;
+            const cloneEl = bodyClone.querySelector(`#${id}`);
+            if (!cloneEl) return;
+            const parent = cloneEl.parentElement;
+            if (
+              parent && parent !== bodyClone &&
+              parent.tagName.toLowerCase() === "div" &&
+              parent.children.length === 1 && !parent.id
+            ) {
+              parent.remove();
+            } else {
+              cloneEl.remove();
+            }
+          });
+
+          const staticMd = processChildren(bodyClone).replace(/\n{3,}/g, "\n\n").trim();
+          if (staticMd) output += staticMd + "\n\n";
+
+          const itemCount = navContainer.querySelectorAll(
+            ":scope > li, :scope > button, :scope > [role='tab']"
+          ).length;
+
+          output += `---\n\n`;
+
+          for (let i = 0; i < itemCount; i++) {
+            onProgress({
+              status: `항목 ${i + 1}/${itemCount} 추출 중...`,
+              current: i + 1,
+              total: itemCount,
+            });
+
+            const freshItems = Array.from(
+              navContainer.querySelectorAll(
+                ":scope > li, :scope > button, :scope > [role='tab']"
+              )
+            );
+            const item = freshItems[i];
+            if (!item) continue;
+
+            const itemLabel = item.textContent.replace(/\s+/g, " ").trim();
+            item.click();
+            await delay(300);
+
+            const sectionMd = processChildren(contentArea)
+              .replace(/\n{3,}/g, "\n\n")
+              .trim();
+
+            if (sectionMd) {
+              output += `## ${itemLabel}\n\n${sectionMd}\n\n---\n\n`;
+            }
+          }
+        } else {
+          onProgress({ status: "본문 전체 추출 중...", current: 0, total: 0 });
+          const bodyMd = processChildren(doc.body).replace(/\n{3,}/g, "\n\n").trim();
+          if (bodyMd) output += bodyMd;
+        }
+
+        return output.replace(/\n{3,}/g, "\n\n").trim();
+      } finally {
+        if (iframe && iframe.parentNode) iframe.parentNode.removeChild(iframe);
+      }
+    }
+
+    // ============================================================
+    // React 앱
+    // ============================================================
+    function App() {
+      const [file, setFile] = useState(null);
+      const [markdown, setMarkdown] = useState("");
+      const [error, setError] = useState("");
+      const [isDragging, setIsDragging] = useState(false);
+      const [showModal, setShowModal] = useState(false);
+      const [downloadFilename, setDownloadFilename] = useState("");
+      const [isConverting, setIsConverting] = useState(false);
+      const [convProgress, setConvProgress] = useState({ status: "", current: 0, total: 0 });
+      const fileInputRef = useRef(null);
+      const MAX_SIZE = 10 * 1024 * 1024;
+
+      const processFile = useCallback(async (f) => {
+        if (!f) return;
+        if (!f.name.match(/\.html?$/i)) {
+          setError("⚠️ HTML 파일(.html, .htm)만 업로드 가능합니다.");
+          return;
+        }
+        if (f.size > MAX_SIZE) {
+          setError("⚠️ 파일 크기는 10MB 이하여야 합니다.");
+          return;
+        }
+        setError("");
+        setIsConverting(true);
+        setConvProgress({ status: "파일 읽는 중...", current: 0, total: 0 });
+        try {
+          const html = await readFileAsText(f);
+          const md = await convertHtmlToMarkdown(html, setConvProgress);
+          setMarkdown(md);
+          setFile(f);
+          setDownloadFilename(f.name.replace(/\.html?$/i, ".md"));
+        } catch (err) {
+          setError("⚠️ 변환 중 오류가 발생했습니다: " + err.message);
+        } finally {
+          setIsConverting(false);
+          setConvProgress({ status: "", current: 0, total: 0 });
+        }
+      }, []);
+
+      const handleDrop = useCallback((e) => {
+        e.preventDefault();
+        setIsDragging(false);
+        const f = e.dataTransfer.files[0];
+        if (f) processFile(f);
+      }, [processFile]);
+
+      const handleReset = () => {
+        setFile(null); setMarkdown(""); setError(""); setShowModal(false);
+      };
+
+      const handleDownload = () => {
+        if (!markdown) return;
+        let name = downloadFilename.trim() || "converted.md";
+        if (!name.endsWith(".md")) name += ".md";
+        const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = name;
+        document.body.appendChild(a); a.click();
+        document.body.removeChild(a); URL.revokeObjectURL(url);
+        setShowModal(false);
+      };
+
+      const lineCount = markdown ? markdown.split("\n").length : 0;
+      const charCount = markdown ? markdown.length : 0;
+      const progressPct = convProgress.total > 0
+        ? Math.round((convProgress.current / convProgress.total) * 100)
+        : null;
+
+      const fontStyle = {
+        fontFamily: "'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif",
+      };
+
+      return (
+        <div style={{ minHeight: "100vh", background: "#f8f9fa", color: "#1a1a2e", ...fontStyle }}>
+
+          {/* 헤더 */}
+          <header style={{
+            background: "#fff", borderBottom: "1px solid #e9ecef",
+            padding: "0 24px", height: 60,
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.06)", position: "sticky", top: 0, zIndex: 100,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{
+                width: 32, height: 32,
+                background: "linear-gradient(135deg, #6c63ff, #4ecdc4)",
+                borderRadius: 8, display: "flex", alignItems: "center",
+                justifyContent: "center", fontSize: 16,
+              }}>📄</div>
+              <span style={{ fontWeight: 700, fontSize: 17, letterSpacing: "-0.3px" }}>
+                HTML → Markdown 변환기
+              </span>
+              <span style={{
+                fontSize: 11, background: "#e8f5e9", color: "#2e7d32",
+                borderRadius: 4, padding: "2px 7px", fontWeight: 600,
+              }}>동적 콘텐츠 지원</span>
+            </div>
+            {file && (
+              <button onClick={handleReset} style={{
+                background: "none", border: "1px solid #dee2e6", borderRadius: 6,
+                padding: "6px 14px", fontSize: 13, color: "#6c757d", cursor: "pointer",
+              }}>새 파일 변환</button>
+            )}
+          </header>
+
+          {/* 메인 */}
+          <main style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 20px" }}>
+            {!file ? (
+              <div style={{ maxWidth: 580, margin: "60px auto 0" }}>
+                <p style={{
+                  textAlign: "center", fontSize: 14, color: "#868e96",
+                  marginBottom: 28, lineHeight: 1.8,
+                }}>
+                  HTML 파일을 업로드하면 마크다운(.md) 파일로 변환합니다.<br />
+                  <strong style={{ color: "#6c63ff" }}>버튼·사이드바 클릭으로 나타나는 동적 콘텐츠</strong>도 빠짐없이 추출합니다.
+                </p>
+
+                {/* 드래그 앤 드롭 */}
+                <div
+                  onDrop={handleDrop}
+                  onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                  onDragLeave={() => setIsDragging(false)}
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{
+                    border: `2px dashed ${isDragging ? "#6c63ff" : "#ced4da"}`,
+                    borderRadius: 16, padding: "56px 32px", textAlign: "center",
+                    cursor: "pointer",
+                    background: isDragging ? "rgba(108,99,255,0.05)" : "#fff",
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  <div style={{ fontSize: 48, marginBottom: 16 }}>📂</div>
+                  <p style={{
+                    fontSize: 16, fontWeight: 600,
+                    color: isDragging ? "#6c63ff" : "#343a40", marginBottom: 8,
+                  }}>
+                    {isDragging ? "여기에 놓아주세요!" : "파일을 여기에 끌어다 놓거나"}
+                  </p>
+                  <p style={{ fontSize: 14, color: "#868e96", marginBottom: 20 }}>
+                    클릭해서 파일을 선택하세요
+                  </p>
+                  <span style={{
+                    display: "inline-block",
+                    background: "linear-gradient(135deg, #6c63ff, #4ecdc4)",
+                    color: "#fff", borderRadius: 8, padding: "10px 24px",
+                    fontSize: 14, fontWeight: 600,
+                  }}>파일 선택</span>
+                  <p style={{ fontSize: 12, color: "#adb5bd", marginTop: 16 }}>
+                    .html, .htm 파일 · 최대 10MB
+                  </p>
+                </div>
+
+                <input ref={fileInputRef} type="file" accept=".html,.htm"
+                  style={{ display: "none" }}
+                  onChange={(e) => { const f = e.target.files[0]; if (f) processFile(f); e.target.value = ""; }}
+                />
+
+                {/* 기능 안내 카드 */}
+                <div style={{
+                  marginTop: 24, display: "grid",
+                  gridTemplateColumns: "1fr 1fr", gap: 10,
+                }}>
+                  {[
+                    ["🏷️", "정적 HTML 구조", "제목·단락·목록·표·코드블록"],
+                    ["⚡", "동적 JS 콘텐츠", "사이드바·탭·버튼 클릭 콘텐츠"],
+                    ["🔗", "링크 처리", "링크 제거, 텍스트 유지"],
+                    ["🖼️", "이미지 처리", "alt 텍스트만 추출"],
+                  ].map(([icon, title, desc]) => (
+                    <div key={title} style={{
+                      background: "#fff", border: "1px solid #e9ecef",
+                      borderRadius: 10, padding: "12px 14px",
+                    }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 2 }}>
+                        {icon} {title}
+                      </div>
+                      <div style={{ fontSize: 12, color: "#868e96" }}>{desc}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {error && (
+                  <div style={{
+                    marginTop: 16, padding: "12px 16px",
+                    background: "#fff5f5", border: "1px solid #ffc9c9",
+                    borderRadius: 8, fontSize: 13, color: "#e03131",
+                  }}>{error}</div>
+                )}
+              </div>
+            ) : (
+              <div>
+                {/* 파일 정보 바 */}
+                <div style={{
+                  background: "#fff", border: "1px solid #e9ecef", borderRadius: 10,
+                  padding: "14px 20px", display: "flex", alignItems: "center",
+                  justifyContent: "space-between", marginBottom: 20,
+                  flexWrap: "wrap", gap: 12,
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <span style={{ fontSize: 22 }}>✅</span>
+                    <div>
+                      <p style={{ fontWeight: 600, fontSize: 14, margin: 0, color: "#212529" }}>
+                        {file.name} → {downloadFilename}
+                      </p>
+                      <p style={{ fontSize: 12, color: "#868e96", margin: "2px 0 0" }}>
+                        원본 {formatFileSize(file.size)} · 변환 결과 {lineCount.toLocaleString()}줄 · {charCount.toLocaleString()}자
+                      </p>
+                    </div>
+                  </div>
+                  <button onClick={() => setShowModal(true)} style={{
+                    background: "linear-gradient(135deg, #6c63ff, #4ecdc4)",
+                    color: "#fff", border: "none", borderRadius: 8,
+                    padding: "10px 22px", fontSize: 14, fontWeight: 600, cursor: "pointer",
+                  }}>⬇ 마크다운 다운로드</button>
+                </div>
+
+                {/* 미리보기 */}
+                <div style={{
+                  background: "#fff", border: "1px solid #e9ecef",
+                  borderRadius: 10, overflow: "hidden",
+                }}>
+                  <div style={{
+                    padding: "10px 16px", borderBottom: "1px solid #f1f3f5",
+                    display: "flex", alignItems: "center", gap: 8, background: "#f8f9fa",
+                  }}>
+                    <span style={{ fontSize: 13, color: "#495057", fontWeight: 600 }}>📝 미리보기</span>
+                    <span style={{
+                      fontSize: 11, color: "#adb5bd", background: "#e9ecef",
+                      borderRadius: 4, padding: "2px 7px",
+                    }}>.md</span>
+                  </div>
+                  <div style={{ overflowY: "auto", maxHeight: "65vh", padding: "24px" }}>
+                    <pre style={{
+                      margin: 0,
+                      fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
+                      fontSize: 13, lineHeight: 1.75, color: "#212529",
+                      whiteSpace: "pre-wrap", wordBreak: "break-word",
+                    }}>{markdown}</pre>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 변환 중 오버레이 */}
+            {isConverting && (
+              <div style={{
+                position: "fixed", inset: 0, background: "rgba(255,255,255,0.92)",
+                display: "flex", flexDirection: "column",
+                alignItems: "center", justifyContent: "center", zIndex: 200,
+              }}>
+                <div style={{
+                  width: 56, height: 56,
+                  border: "5px solid #e9ecef", borderTop: "5px solid #6c63ff",
+                  borderRadius: "50%", animation: "spin 0.8s linear infinite",
+                  marginBottom: 20,
+                }} />
+                <p style={{ fontSize: 15, fontWeight: 600, color: "#343a40", marginBottom: 8 }}>
+                  {convProgress.status || "처리 중..."}
+                </p>
+                {convProgress.total > 0 && (
+                  <div style={{ width: 300 }}>
+                    <div style={{
+                      background: "#e9ecef", borderRadius: 999,
+                      height: 8, overflow: "hidden", marginBottom: 6,
+                    }}>
+                      <div style={{
+                        width: `${progressPct}%`, height: "100%",
+                        background: "linear-gradient(90deg, #6c63ff, #4ecdc4)",
+                        borderRadius: 999, transition: "width 0.3s ease",
+                      }} />
+                    </div>
+                    <p style={{ fontSize: 12, color: "#868e96", textAlign: "center" }}>
+                      {convProgress.current}/{convProgress.total} 항목 처리 중 ({progressPct}%)
+                    </p>
+                  </div>
+                )}
+                <p style={{
+                  marginTop: 16, fontSize: 12, color: "#adb5bd",
+                  maxWidth: 320, textAlign: "center",
+                }}>
+                  동적 콘텐츠를 모두 추출하기 위해 HTML을 렌더링하고<br />
+                  각 메뉴 항목을 순차적으로 클릭하고 있습니다.
+                </p>
+              </div>
+            )}
+          </main>
+
+          {/* 다운로드 모달 */}
+          {showModal && (
+            <div style={{
+              position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              zIndex: 300, padding: 20,
+            }} onClick={(e) => { if (e.target === e.currentTarget) setShowModal(false); }}>
+              <div style={{
+                background: "#fff", borderRadius: 14, padding: 32,
+                width: "100%", maxWidth: 440,
+                boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+              }}>
+                <h2 style={{ margin: "0 0 8px", fontSize: 18, fontWeight: 700 }}>
+                  마크다운 파일 다운로드
+                </h2>
+                <p style={{ fontSize: 13, color: "#868e96", marginBottom: 24 }}>
+                  저장할 파일명을 수정할 수 있습니다.
+                </p>
+                <label style={{
+                  display: "block", fontSize: 13, fontWeight: 600,
+                  color: "#495057", marginBottom: 8,
+                }}>파일명</label>
+                <input
+                  type="text"
+                  value={downloadFilename}
+                  onChange={(e) => setDownloadFilename(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleDownload();
+                    if (e.key === "Escape") setShowModal(false);
+                  }}
+                  style={{
+                    width: "100%", border: "1px solid #ced4da", borderRadius: 8,
+                    padding: "10px 14px", fontSize: 14, color: "#212529",
+                    outline: "none", boxSizing: "border-box",
+                    fontFamily: "inherit", marginBottom: 24,
+                  }}
+                  autoFocus
+                />
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button onClick={() => setShowModal(false)} style={{
+                    flex: 1, padding: "11px", border: "1px solid #dee2e6",
+                    borderRadius: 8, background: "#fff", fontSize: 14,
+                    color: "#495057", cursor: "pointer", fontWeight: 500,
+                  }}>취소</button>
+                  <button onClick={handleDownload} style={{
+                    flex: 2, padding: "11px", border: "none", borderRadius: 8,
+                    background: "linear-gradient(135deg, #6c63ff, #4ecdc4)",
+                    color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer",
+                  }}>⬇ 다운로드</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // 앱 마운트
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
 </body>
 </html>
